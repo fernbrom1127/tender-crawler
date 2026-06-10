@@ -1,0 +1,12 @@
+{
+  "name": "tender-crawler",
+  "version": "1.0.0",
+  "description": "政府電子採購網爬蟲 - 自動抓取景觀營造標案",
+  "main": "crawler.js",
+  "scripts": {
+    "start": "node crawler.js"
+  },
+  "keywords": ["tender", "crawler", "government", "construction"],
+  "author": "",
+  "license": "MIT"
+}
