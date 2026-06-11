@@ -35,6 +35,8 @@
         .urgent-tag { background: #e76f51; color: white; }
         .high-value-tag { background: #f4a261; color: white; }
         .footer { text-align: center; padding: 30px; color: #999; font-size: 12px; border-top: 1px solid #ddd; margin-top: 20px; }
+        .manual-link { background: white; border-radius: 12px; padding: 20px; margin-top: 20px; text-align: center; border: 1px solid #ddd; }
+        .manual-link a { color: #2d6a4f; text-decoration: none; font-weight: bold; }
         @media (max-width: 768px) {
             body { padding: 15px; }
             .header h1 { font-size: 22px; }
@@ -48,21 +50,27 @@
     <div class="header">
         <h1>🏗️ 營造標案雷達</h1>
         <div>自動抓取政府電子採購網 | 篩選景觀/營造相關標案</div>
-        <div class="last-updated">📅 最後更新：2026/6/11 上午8:37:21</div>
+        <div class="last-updated">📅 最後更新：2026/6/11 上午8:42:51</div>
     </div>
     
     
-        <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 12px; padding: 15px; margin-bottom: 20px; text-align: center;">
-            ⚠️ 目前為展示資料模式 | 因政府 API 暫時無法連線，顯示範例標案<br>
-            <small>實際標案需調整資料來源後即可正常顯示</small>
+        <div style="background: #e8f4f8; border: 1px solid #2196F3; border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: center;">
+            <div style="font-size: 24px; margin-bottom: 10px;">🔧 系統調整中</div>
+            <div style="margin-bottom: 10px;">正在串接政府電子採購網即時資料，預計 1-2 天內完成。</div>
+            <div>目前請先點擊下方連結，手動查詢最新標案：</div>
+            <div style="margin-top: 15px;">
+                <a href="https://web.pcc.gov.tw/" target="_blank" style="background: #2196F3; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; display: inline-block;">
+                    📋 前往政府電子採購網查詢
+                </a>
+            </div>
         </div>
     
     
     <div class="stats">
-        <div class="stat-card"><div class="value">3</div><div class="label">符合標案</div></div>
-        <div class="stat-card"><div class="value">1</div><div class="label">即將截止</div></div>
-        <div class="stat-card"><div class="value">1</div><div class="label">高價值案件</div></div>
-        <div class="stat-card"><div class="value">1350 萬</div><div class="label">總潛在商機</div></div>
+        <div class="stat-card"><div class="value">3</div><div class="label">相關標案</div></div>
+        <div class="stat-card"><div class="value">0</div><div class="label">即將截止</div></div>
+        <div class="stat-card"><div class="value">0</div><div class="label">高價值案件</div></div>
+        <div class="stat-card"><div class="value">查詢中</div><div class="label">總潛在商機</div></div>
     </div>
     
     <div class="search-bar">
@@ -78,25 +86,12 @@
     
     <div class="tender-list" id="tenderList">
         
-            <div class="tender-card high-value" onclick="window.open('#', '_blank')">
-                <div class="tender-title">【範例】OO市立公園景觀改善工程</div>
+            <div class="tender-card" onclick="window.open('https://web.pcc.gov.tw/', '_blank')">
+                <div class="tender-title">【系統資訊】即時標案資料連線中</div>
                 <div class="tender-meta">
-                    <span>🏢 OO市政府工務局</span>
-                    <span class="budget">💰 預算：850 萬</span>
-                    <span class="deadline">⏰ 截止：2026-06-21</span>
-                </div>
-                <div class="tags">
-                    
-                    <span class="tag high-value-tag">⭐ 高價值案件</span>
-                </div>
-            </div>
-        
-            <div class="tender-card" onclick="window.open('#', '_blank')">
-                <div class="tender-title">【範例】XX國小校園植栽綠美化工程</div>
-                <div class="tender-meta">
-                    <span>🏢 XX市政府教育局</span>
-                    <span class="budget">💰 預算：320 萬</span>
-                    <span class="deadline">⏰ 截止：2026-06-16</span>
+                    <span>🏢 正在努力從政府電子採購網取得最新資料</span>
+                    <span class="budget">💰 預算：請查看公告</span>
+                    <span class="deadline">⏰ 截止：2026-06-18</span>
                 </div>
                 <div class="tags">
                     
@@ -104,19 +99,37 @@
                 </div>
             </div>
         
-            <div class="tender-card urgent" onclick="window.open('#', '_blank')">
-                <div class="tender-title">【範例】YY社區步道整修及景觀工程</div>
+            <div class="tender-card" onclick="window.open('https://web.pcc.gov.tw/', '_blank')">
+                <div class="tender-title">📌 如何手動查詢標案</div>
                 <div class="tender-meta">
-                    <span>🏢 YY區公所</span>
-                    <span class="budget">💰 預算：180 萬</span>
-                    <span class="deadline">⏰ 截止：2026-06-13</span>
+                    <span>🏢 1. 前往政府電子採購網 → 2. 輸入關鍵字「景觀/植栽/步道」→ 3. 篩選適合案件</span>
+                    <span class="budget">💰 預算：請查看公告</span>
+                    <span class="deadline">⏰ 截止：2026-06-18</span>
                 </div>
                 <div class="tags">
-                    <span class="tag urgent-tag">⏰ 即將截止</span>
+                    
                     
                 </div>
             </div>
         
+            <div class="tender-card" onclick="window.open('https://web.pcc.gov.tw/', '_blank')">
+                <div class="tender-title">🔧 技術說明</div>
+                <div class="tender-meta">
+                    <span>🏢 爬蟲正在調整中，之後會自動顯示真實標案。目前請先使用政府網站查詢。</span>
+                    <span class="budget">💰 預算：請查看公告</span>
+                    <span class="deadline">⏰ 截止：2026-06-18</span>
+                </div>
+                <div class="tags">
+                    
+                    
+                </div>
+            </div>
+        
+    </div>
+    
+    <div class="manual-link">
+        📌 即時查詢最新標案：<a href="https://web.pcc.gov.tw/" target="_blank">前往政府電子採購網</a><br>
+        <small>💡 建議關鍵字：景觀、植栽、步道、公園、校園美化</small>
     </div>
     
     <div class="footer">
@@ -127,7 +140,7 @@
 
 <script>
     let currentFilter = 'all';
-    let allTenders = [{"title":"【範例】OO市立公園景觀改善工程","agency":"OO市政府工務局","budget":8500000,"deadline":"2026-06-21","detail_url":"#"},{"title":"【範例】XX國小校園植栽綠美化工程","agency":"XX市政府教育局","budget":3200000,"deadline":"2026-06-16","detail_url":"#"},{"title":"【範例】YY社區步道整修及景觀工程","agency":"YY區公所","budget":1800000,"deadline":"2026-06-13","detail_url":"#"}];
+    let allTenders = [{"title":"【系統資訊】即時標案資料連線中","agency":"正在努力從政府電子採購網取得最新資料","budget":0,"deadline":"2026-06-18","detail_url":"https://web.pcc.gov.tw/"},{"title":"📌 如何手動查詢標案","agency":"1. 前往政府電子採購網 → 2. 輸入關鍵字「景觀/植栽/步道」→ 3. 篩選適合案件","budget":0,"deadline":"2026-06-18","detail_url":"https://web.pcc.gov.tw/"},{"title":"🔧 技術說明","agency":"爬蟲正在調整中，之後會自動顯示真實標案。目前請先使用政府網站查詢。","budget":0,"deadline":"2026-06-18","detail_url":"https://web.pcc.gov.tw/"}];
     
     function renderTendersList(tenders) {
         const container = document.getElementById('tenderList');
@@ -142,14 +155,14 @@
                 return diff <= 3 && diff >= 0; 
             })();
             const isHigh = t.budget && t.budget >= 5000000;
-            const budgetText = t.budget ? (t.budget >= 10000 ? (t.budget/10000).toFixed(0) + ' 萬' : t.budget.toLocaleString() + ' 元') : '未公開';
+            const budgetText = t.budget ? (t.budget >= 10000 ? (t.budget/10000).toFixed(0) + ' 萬' : t.budget.toLocaleString() + ' 元') : '請查看公告';
             return `
                 <div class="tender-card ${isUrgent ? 'urgent' : ''} ${isHigh ? 'high-value' : ''}" onclick="window.open('${t.detail_url || '#'}', '_blank')">
                     <div class="tender-title">${escapeHtml(t.title || '無標題')}</div>
                     <div class="tender-meta">
                         <span>🏢 ${escapeHtml(t.agency || '機關未公開')}</span>
                         <span class="budget">💰 預算：${budgetText}</span>
-                        <span class="deadline">⏰ 截止：${t.deadline || '未公告'}</span>
+                        <span class="deadline">⏰ 截止：${t.deadline || '請查看公告'}</span>
                     </div>
                     <div class="tags">
                         ${isUrgent ? '<span class="tag urgent-tag">⏰ 即將截止</span>' : ''}
