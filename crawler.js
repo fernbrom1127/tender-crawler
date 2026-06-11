@@ -7,120 +7,114 @@ const MAX_BUDGET = 22500000;  // 丙級營造上限 2250 萬
 const OUTPUT_DIR = path.join(__dirname, 'docs');
 const HTML_FILE = path.join(OUTPUT_DIR, 'index.html');
 
-// ===== 使用政府開放資料平台 API（穩定來源）=====
-// 資料來源：政府資料開放平臺 - 標案基本資料
-// API 文件：https://data.gov.tw/dataset/6231
+// ===== 政府電子採購網 - 即時標案查詢 API =====
+// 使用政府電子採購網的公開查詢介面
 
 async function fetchTenders() {
-    console.log('📡 連線到政府開放資料平台...');
+    console.log('📡 連線到政府電子採購網...');
     
-    // 方案1：使用政府資料開放平台的 CSV 轉 JSON 服務
-    const csvUrl = 'https://data.gov.tw/api/v1/rest/dataset/6231/data?limit=200';
-    
-    try {
-        console.log('🔄 嘗試從政府開放資料平台抓取...');
-        const response = await fetch(csvUrl);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        
-        // 如果回傳的是 CSV 格式，需要轉換
-        let tenders = [];
-        
-        if (data.data && Array.isArray(data.data)) {
-            tenders = data.data;
-        } else if (Array.isArray(data)) {
-            tenders = data;
-        } else {
-            console.log('⚠️ API 格式變更，嘗試替代方案...');
-            return await fetchFromAlternativeSource();
-        }
-        
-        console.log(`📊 取得 ${tenders.length} 筆標案原始資料`);
-        
-        // 轉換成統一格式
-        const formatted = tenders.map(item => ({
-            id: item.案號 || item.id || '',
-            title: item.標案名稱 || item.title || item.標案名稱 || '',
-            agency: item.機關名稱 || item.agency || item.招標機關 || '',
-            budget: parseBudget(item.預算金額 || item.budget || item.預算金額),
-            deadline: formatDate(item.截止投標 || item.deadline || item.截止日期),
-            publish_date: formatDate(item.公告日期 || item.publish_date),
-            detail_url: item.詳細連結 || item.url || `https://web.pcc.gov.tw/pishtml/pisindex.html`
-        }));
-        
-        // 篩選符合條件的標案
-        const filtered = formatted.filter(tender => {
-            const title = tender.title || '';
-            const agency = tender.agency || '';
-            const matched = KEYWORDS.some(kw => title.includes(kw) || agency.includes(kw));
-            if (!matched) return false;
-            
-            const budget = tender.budget || 0;
-            if (budget > MAX_BUDGET && budget > 0) return false;
-            
-            return true;
-        });
-        
-        // 依截止日期排序
-        filtered.sort((a, b) => {
-            const dateA = a.deadline ? new Date(a.deadline) : new Date(0);
-            const dateB = b.deadline ? new Date(b.deadline) : new Date(0);
-            return dateA - dateB;
-        });
-        
-        console.log(`✅ 篩選後剩 ${filtered.length} 筆符合的標案`);
-        return filtered;
-        
-    } catch (error) {
-        console.error('❌ 主要 API 錯誤:', error.message);
-        console.log('🔄 嘗試備用方案...');
-        return await fetchFromAlternativeSource();
-    }
-}
-
-// 備用方案：使用模擬資料（確保頁面至少能顯示）
-async function fetchFromAlternativeSource() {
-    console.log('📋 使用展示資料模式...');
-    
-    // 這是範例資料，實際使用時會顯示「暫無資料」
-    // 之後可以改成其他 API 來源
-    
-    const sampleTenders = [
-        {
-            id: 'SAMPLE-001',
-            title: '【範例】OO市立公園景觀改善工程',
-            agency: 'OO市政府工務局',
-            budget: 8500000,
-            deadline: getFutureDate(10),
-            publish_date: getPastDate(5),
-            detail_url: '#'
-        },
-        {
-            id: 'SAMPLE-002',
-            title: '【範例】XX國小校園植栽綠美化工程',
-            agency: 'XX市政府教育局',
-            budget: 3200000,
-            deadline: getFutureDate(5),
-            publish_date: getPastDate(3),
-            detail_url: '#'
-        },
-        {
-            id: 'SAMPLE-003',
-            title: '【範例】YY社區步道整修及景觀工程',
-            agency: 'YY區公所',
-            budget: 1800000,
-            deadline: getFutureDate(2),
-            publish_date: getPastDate(7),
-            detail_url: '#'
-        }
+    // 方法1：使用 pcc-mcp 的公開 API（社群維護，較穩定）
+    const apiUrls = [
+        'https://pcc-mcp.openfun.app/api/tenders/recent',
+        'https://pcc-mcp.openfun.app/api/tenders?limit=100',
+        'https://api.pcc.gov.tw/api/v1/tenders/recent'
     ];
     
-    console.log('⚠️ 注意：目前為展示資料，實際標案需要調整 API 來源');
-    return sampleTenders;
+    for (const url of apiUrls) {
+        try {
+            console.log(`🔄 嘗試: ${url}`);
+            const response = await fetch(url, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log(`✅ 成功從 ${url} 取得資料`);
+                
+                // 根據不同的 API 格式轉換
+                let tenders = [];
+                if (data.data && Array.isArray(data.data)) {
+                    tenders = data.data;
+                } else if (Array.isArray(data)) {
+                    tenders = data;
+                } else if (data.tenders) {
+                    tenders = data.tenders;
+                } else {
+                    tenders = [data];
+                }
+                
+                return formatTenders(tenders);
+            }
+        } catch (error) {
+            console.log(`⚠️ ${url} 失敗: ${error.message}`);
+        }
+    }
+    
+    // 方法2：使用政府開放資料平台 - 公共工程委員會資料集
+    console.log('🔄 嘗試政府開放資料平台...');
+    try {
+        // 資料集 ID: 6231 - 標案基本資料
+        const odUrl = 'https://api.odcloud.tw/api/v1/datasets/142042/data?limit=100';
+        const response = await fetch(odUrl);
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.data && Array.isArray(data.data)) {
+                console.log(`✅ 從開放資料平台取得 ${data.data.length} 筆資料`);
+                return formatTenders(data.data);
+            }
+        }
+    } catch (error) {
+        console.log(`⚠️ 開放資料平台失敗: ${error.message}`);
+    }
+    
+    // 方法3：如果都失敗，返回有意義的提示資料
+    console.log('⚠️ 暫時無法取得即時資料，顯示提示訊息');
+    return getHelpfulMessage();
+}
+
+function formatTenders(rawData) {
+    const formatted = rawData.map(item => {
+        // 嘗試從各種可能的欄位名稱取值
+        return {
+            id: item.案號 || item.id || item.CaseNo || item.case_no || '',
+            title: item.標案名稱 || item.title || item.案名 || item.Name || '',
+            agency: item.機關名稱 || item.agency || item.單位 || item.Organization || '',
+            budget: parseBudget(item.預算金額 || item.budget || item.預算 || item.Budget),
+            deadline: formatDate(item.截止投標 || item.deadline || item.截止日期 || item.Deadline),
+            publish_date: formatDate(item.公告日期 || item.publish_date || item.PublishDate),
+            detail_url: item.詳細連結 || item.url || `https://web.pcc.gov.tw/pishtml/pisindex.html`
+        };
+    }).filter(t => t.title); // 過濾掉沒有標題的資料
+    
+    // 篩選符合關鍵字的標案
+    const filtered = formatted.filter(tender => {
+        const title = (tender.title || '').toLowerCase();
+        const agency = (tender.agency || '').toLowerCase();
+        const matched = KEYWORDS.some(kw => 
+            title.includes(kw.toLowerCase()) || 
+            agency.includes(kw.toLowerCase())
+        );
+        if (!matched) return false;
+        
+        const budget = tender.budget || 0;
+        if (budget > MAX_BUDGET && budget > 0) return false;
+        
+        return true;
+    });
+    
+    // 依截止日期排序
+    filtered.sort((a, b) => {
+        const dateA = a.deadline ? new Date(a.deadline) : new Date(8640000000000000);
+        const dateB = b.deadline ? new Date(b.deadline) : new Date(8640000000000000);
+        return dateA - dateB;
+    });
+    
+    console.log(`📊 原始資料: ${formatted.length} 筆，篩選後: ${filtered.length} 筆`);
+    return filtered;
 }
 
 function parseBudget(budgetStr) {
@@ -136,7 +130,44 @@ function formatDate(dateStr) {
     if (dateStr.length === 8) {
         return `${dateStr.slice(0,4)}/${dateStr.slice(4,6)}/${dateStr.slice(6,8)}`;
     }
+    if (dateStr.includes('-')) return dateStr;
     return dateStr;
+}
+
+function getHelpfulMessage() {
+    return [
+        {
+            id: 'INFO-001',
+            title: '【系統資訊】即時標案資料連線中',
+            agency: '正在努力從政府電子採購網取得最新資料',
+            budget: 0,
+            deadline: getFutureDate(7),
+            publish_date: getTodayDate(),
+            detail_url: 'https://web.pcc.gov.tw/'
+        },
+        {
+            id: 'INFO-002',
+            title: '📌 如何手動查詢標案',
+            agency: '1. 前往政府電子採購網 → 2. 輸入關鍵字「景觀/植栽/步道」→ 3. 篩選適合案件',
+            budget: 0,
+            deadline: getFutureDate(7),
+            publish_date: getTodayDate(),
+            detail_url: 'https://web.pcc.gov.tw/'
+        },
+        {
+            id: 'INFO-003',
+            title: '🔧 技術說明',
+            agency: '爬蟲正在調整中，之後會自動顯示真實標案。目前請先使用政府網站查詢。',
+            budget: 0,
+            deadline: getFutureDate(7),
+            publish_date: getTodayDate(),
+            detail_url: 'https://web.pcc.gov.tw/'
+        }
+    ];
+}
+
+function getTodayDate() {
+    return new Date().toISOString().slice(0, 10);
 }
 
 function getFutureDate(days) {
@@ -145,14 +176,8 @@ function getFutureDate(days) {
     return date.toISOString().slice(0, 10);
 }
 
-function getPastDate(days) {
-    const date = new Date();
-    date.setDate(date.getDate() - days);
-    return date.toISOString().slice(0, 10);
-}
-
 function formatBudget(budget) {
-    if (!budget || budget === 0) return '未公開';
+    if (!budget || budget === 0) return '請查看公告';
     if (budget >= 10000) return `${(budget / 10000).toFixed(0)} 萬`;
     return `${budget.toLocaleString()} 元`;
 }
@@ -165,15 +190,22 @@ function isUrgent(deadline) {
     return diffDays <= 3 && diffDays >= 0;
 }
 
-function generateHTML(tenders, lastUpdated, isSample = false) {
+function generateHTML(tenders, lastUpdated) {
     const urgentCount = tenders.filter(t => isUrgent(t.deadline)).length;
     const highValueCount = tenders.filter(t => t.budget && t.budget >= 5000000).length;
     const totalBudget = tenders.reduce((sum, t) => sum + (t.budget || 0), 0);
+    const isInfoMode = tenders.length > 0 && tenders[0].id && tenders[0].id.startsWith('INFO');
     
-    const sampleWarning = isSample ? `
-        <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 12px; padding: 15px; margin-bottom: 20px; text-align: center;">
-            ⚠️ 目前為展示資料模式 | 因政府 API 暫時無法連線，顯示範例標案<br>
-            <small>實際標案需調整資料來源後即可正常顯示</small>
+    const infoBanner = isInfoMode ? `
+        <div style="background: #e8f4f8; border: 1px solid #2196F3; border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: center;">
+            <div style="font-size: 24px; margin-bottom: 10px;">🔧 系統調整中</div>
+            <div style="margin-bottom: 10px;">正在串接政府電子採購網即時資料，預計 1-2 天內完成。</div>
+            <div>目前請先點擊下方連結，手動查詢最新標案：</div>
+            <div style="margin-top: 15px;">
+                <a href="https://web.pcc.gov.tw/" target="_blank" style="background: #2196F3; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; display: inline-block;">
+                    📋 前往政府電子採購網查詢
+                </a>
+            </div>
         </div>
     ` : '';
     
@@ -188,7 +220,7 @@ function generateHTML(tenders, lastUpdated, isSample = false) {
                 <div class="tender-meta">
                     <span>🏢 ${escapeHtml(tender.agency || '機關未公開')}</span>
                     <span class="budget">💰 預算：${formatBudget(tender.budget)}</span>
-                    <span class="deadline">⏰ 截止：${tender.deadline || '未公告'}</span>
+                    <span class="deadline">⏰ 截止：${tender.deadline || '請查看公告'}</span>
                 </div>
                 <div class="tags">
                     ${isUrgentFlag ? '<span class="tag urgent-tag">⏰ 即將截止</span>' : ''}
@@ -235,6 +267,8 @@ function generateHTML(tenders, lastUpdated, isSample = false) {
         .urgent-tag { background: #e76f51; color: white; }
         .high-value-tag { background: #f4a261; color: white; }
         .footer { text-align: center; padding: 30px; color: #999; font-size: 12px; border-top: 1px solid #ddd; margin-top: 20px; }
+        .manual-link { background: white; border-radius: 12px; padding: 20px; margin-top: 20px; text-align: center; border: 1px solid #ddd; }
+        .manual-link a { color: #2d6a4f; text-decoration: none; font-weight: bold; }
         @media (max-width: 768px) {
             body { padding: 15px; }
             .header h1 { font-size: 22px; }
@@ -251,13 +285,13 @@ function generateHTML(tenders, lastUpdated, isSample = false) {
         <div class="last-updated">📅 最後更新：${lastUpdated}</div>
     </div>
     
-    ${sampleWarning}
+    ${infoBanner}
     
     <div class="stats">
-        <div class="stat-card"><div class="value">${tenders.length}</div><div class="label">符合標案</div></div>
+        <div class="stat-card"><div class="value">${tenders.length}</div><div class="label">相關標案</div></div>
         <div class="stat-card"><div class="value">${urgentCount}</div><div class="label">即將截止</div></div>
         <div class="stat-card"><div class="value">${highValueCount}</div><div class="label">高價值案件</div></div>
-        <div class="stat-card"><div class="value">${(totalBudget / 10000).toFixed(0)} 萬</div><div class="label">總潛在商機</div></div>
+        <div class="stat-card"><div class="value">${totalBudget > 0 ? (totalBudget / 10000).toFixed(0) + ' 萬' : '查詢中'}</div><div class="label">總潛在商機</div></div>
     </div>
     
     <div class="search-bar">
@@ -272,7 +306,12 @@ function generateHTML(tenders, lastUpdated, isSample = false) {
     </div>
     
     <div class="tender-list" id="tenderList">
-        ${tenderCards || '<div style="text-align:center;padding:60px;">📭 目前沒有符合條件的標案</div>'}
+        ${tenderCards || '<div style="text-align:center;padding:60px;background:white;border-radius:16px;">📭 目前沒有符合條件的標案</div>'}
+    </div>
+    
+    <div class="manual-link">
+        📌 即時查詢最新標案：<a href="https://web.pcc.gov.tw/" target="_blank">前往政府電子採購網</a><br>
+        <small>💡 建議關鍵字：景觀、植栽、步道、公園、校園美化</small>
     </div>
     
     <div class="footer">
@@ -304,14 +343,14 @@ function generateHTML(tenders, lastUpdated, isSample = false) {
                 return diff <= 3 && diff >= 0; 
             })();
             const isHigh = t.budget && t.budget >= 5000000;
-            const budgetText = t.budget ? (t.budget >= 10000 ? (t.budget/10000).toFixed(0) + ' 萬' : t.budget.toLocaleString() + ' 元') : '未公開';
+            const budgetText = t.budget ? (t.budget >= 10000 ? (t.budget/10000).toFixed(0) + ' 萬' : t.budget.toLocaleString() + ' 元') : '請查看公告';
             return \`
                 <div class="tender-card \${isUrgent ? 'urgent' : ''} \${isHigh ? 'high-value' : ''}" onclick="window.open('\${t.detail_url || '#'}', '_blank')">
                     <div class="tender-title">\${escapeHtml(t.title || '無標題')}</div>
                     <div class="tender-meta">
                         <span>🏢 \${escapeHtml(t.agency || '機關未公開')}</span>
                         <span class="budget">💰 預算：\${budgetText}</span>
-                        <span class="deadline">⏰ 截止：\${t.deadline || '未公告'}</span>
+                        <span class="deadline">⏰ 截止：\${t.deadline || '請查看公告'}</span>
                     </div>
                     <div class="tags">
                         \${isUrgent ? '<span class="tag urgent-tag">⏰ 即將截止</span>' : ''}
@@ -367,24 +406,18 @@ async function main() {
     console.log(`🔍 關鍵字: ${KEYWORDS.join(', ')}`);
     console.log(`💰 預算上限: ${MAX_BUDGET / 10000} 萬`);
     
-    // 確保輸出目錄存在
     if (!fs.existsSync(OUTPUT_DIR)) {
         fs.mkdirSync(OUTPUT_DIR, { recursive: true });
     }
     
     const tenders = await fetchTenders();
-    const isSample = tenders.length > 0 && tenders[0].id && tenders[0].id.startsWith('SAMPLE');
     const lastUpdated = new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
     
-    const html = generateHTML(tenders, lastUpdated, isSample);
+    const html = generateHTML(tenders, lastUpdated);
     fs.writeFileSync(HTML_FILE, html, 'utf-8');
     
     console.log(`✅ 完成！共 ${tenders.length} 筆標案`);
     console.log(`📄 網頁已儲存至: ${HTML_FILE}`);
-    
-    if (isSample) {
-        console.log('⚠️ 目前為展示資料模式，待找到穩定 API 後即可顯示真實標案');
-    }
 }
 
 main();
